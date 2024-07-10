@@ -6,9 +6,9 @@ const useAutosizeText = (
 ) => {
     useEffect(() => {
         if (textRef) {
-            textRef.style.height = "0px";
+            textRef.style.height = "auto";
             const scrollHeight = textRef.scrollHeight;
-            textRef.style.height = scrollHeight + "px";
+            textRef.style.height = `${Math.min(textRef.scrollHeight, 400)}px`;
         }
     }, [textRef, value]);
 };
