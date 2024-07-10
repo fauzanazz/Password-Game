@@ -1,4 +1,4 @@
-const SetRules = [
+export const SetRules = [
     {
         description: "Your password must be at least X characters"
     },

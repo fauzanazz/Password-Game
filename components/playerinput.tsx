@@ -1,6 +1,10 @@
 "use client";
 import React, {useState, ChangeEvent, useRef} from "react";
 import useAutosizeText from "@/components/AutoSizeText";
+import { RuleCard } from "@/components/Rules/RuleCard";
+import { SetRules } from "@/components/Rules/SetRules";
+import { RulesData } from "@/components/Rules/RuleCard";
+import  Rules  from "@/components/Rules/Rules";
 
 const PlayerInput = () => {
     const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -9,12 +13,13 @@ const PlayerInput = () => {
     const [isStarted, setIsStarted] = useState<boolean>(false);
     const [isFinished, setIsFinished] = useState<boolean>(false);
     const [passlength, setPasslength] = useState<number>(0);
-
     useAutosizeText(inputRef.current, password);
 
+    const Rules = SetRules;
     const handleChange = async (event: React.ChangeEvent<HTMLTextAreaElement>) => {
         if (!isStarted) {
             setIsStarted(true);
+
         }
 
         const input = event.target?.value;
@@ -36,11 +41,17 @@ const PlayerInput = () => {
                         ref={inputRef}
                         rows={1}
                         value={password}
-                        className="border rounded-lg p-2 w-96"
+                        className="border rounded-lg p-2 w-96 resize-none"
                     />
                     <label className="text-lg ml-2 p-2"> {passlength === 0 ? "" : passlength} </label>
                 </div>
             </div>
+
+            {/* Add rules */}
+            <div className="flex flex-row gap-y-5 justify-center">
+
+            </div>
+
         </div>
     );
 };

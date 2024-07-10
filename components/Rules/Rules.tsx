@@ -1,4 +1,4 @@
-import { RulesData, RuleCard } from '@/components/RuleCard';
+import { RulesData, RuleCard } from '@/components/Rules/RuleCard';
 
 const Rules = ({ rules }: { rules: RulesData[] }) => {
     return (
