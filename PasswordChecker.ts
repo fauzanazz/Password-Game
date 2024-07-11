@@ -1,25 +1,24 @@
+import { getAnswerCaptcha, getAnswerCountryFlag } from "@/actions/database";
+
+
 export interface SessionConfig {
     passLength: number;
     sumDigits: number;
     countryID: string;
     RomanNumeralMult: number;
-    CapchaID: string;
+    CaptchaID: string;
     WormsEaten: number;
     WormsUpdateRate: number;
+    MinimumDigits: number;
     LetterBanned: string;
 }
-export const PasswordChecker = (password: string, level: number, config: SessionConfig, isLooping: boolean): Record<number, boolean> | null => {
+export const PasswordChecker = async (password: string, level: number, config: SessionConfig): Promise<Record<number, boolean> | null> => {
     if (isCheatUsed(password)) return null;
 
     const result: Record<number, boolean> = {};
 
-    if (isLooping) {
-        result[level] = Runner(password, level, config);
-        return result;
-    }
-
     for (let i = 1; i <= level; i++) {
-        result[i] = Runner(password, i, config);
+        result[i] = await Runner(password, i, config);
     }
 
     return result;
@@ -50,11 +49,11 @@ const Runner = (password: string, level: number, config: SessionConfig) => {
         case 11:
             return level11(password);
         case 12:
-            return level12(password, config.CapchaID);
+            return level12(password, config.CaptchaID);
         case 13:
             return level13(password);
         case 14:
-            return level14(password, config.WormsEaten, config.WormsUpdateRate);
+            return level14(password, config.WormsEaten);
         case 15:
             return level15(password, config.LetterBanned);
         case 16:
@@ -84,74 +83,126 @@ const level1 = (password: string, length: number) => {
 
 const level2 = (password: string) => {
     // Password must contain at least one number
-    return true;
+    return /\d/.test(password);
 }
 
 const level3 = (password: string) => {
     // Password must contain at least one uppercase letter
-    return true;
+    return /[A-Z]/.test(password);
 }
 
 const level4 = (password: string) => {
     // Password must contain at least one special character
-    return true;
+    return /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(password);
 }
 
 const level5 = (password: string, sum: number) => {
     // The digits in your password must add up to X
-    let digits = password.match(/\d+/g);
-    let sumDigits = 0;
-    if (digits) {
-        digits.forEach((digit) => {
-            sumDigits += parseInt(digit);
-        });
-    }
+    const digits = password.match(/\d/g);
+    const sumDigits = digits ? digits.reduce((acc, digit) => acc + parseInt(digit), 0) : 0;
     return sumDigits === sum;
 }
 
 const level6 = (password: string) => {
     // Password must include a month of the year
-    return true;
+    return password.toLowerCase().match(/january|february|march|april|may|june|july|august|september|october|november|december/) !== null;
 }
 
 const level7 = (password: string) => {
     // Password must include a Roman numeral
-    return true;
+    return password.match(/[IVXLCDM]/) !== null;
 }
 
-const level8 = (password: string, countryID: string) => {
+const level8 = async (password: string, countryID: string) => {
     // Password must include one of this country
-    return true;
+    const answer = await getAnswerCountryFlag(countryID);
+    if (!answer) return false;
+    return password.toLowerCase().includes(answer?.toLowerCase());
 }
 
 const level9 = (password: string, product: number) => {
     // The Roman numerals in your password should multiply to X
-    return true;
+    const romanNumerals = password.match(/[IVXLCDM]+/g);
+    let productRoman = 1;
+
+    function romanToNumber(roman: string) {
+        const romanMap: Record<string, number> = {
+            'I': 1,
+            'V': 5,
+            'X': 10,
+            'L': 50,
+            'C': 100,
+            'D': 500,
+            'M': 1000
+        };
+
+        let result = 0;
+        let prev = 0;
+
+        for (let i = roman.length - 1; i >= 0; i--) {
+            let current = romanMap[roman[i]];
+
+            if (current < prev) {
+                result -= current;
+            } else {
+                result += current;
+            }
+
+            prev = current;
+        }
+
+        return result;
+    }
+
+    if (romanNumerals) {
+        romanNumerals.forEach((roman) => {
+            productRoman *= romanToNumber(roman);
+        });
+    }
+
+    return productRoman === product
 }
 
 const level10 = (password: string) => {
-    // 🥚Oh no! Your password is on fire 🔥. Quick, put it out!
-    return true;
+    // Oh no! Your password is on fire 🔥. Quick, put it out!
+    return !password.toLowerCase().includes("🔥");
 }
 
 const level11 = (password: string) => {
     //🥚 This is my chicken Paul. He hasn’t hatched yet. Please put him in your password and keep him safe
-    return true;
+    return password.toLowerCase().includes("🥚");
 }
 
-const level12 = (password: string, CaptchaID: string) => {
+const level12 = async (password: string, CaptchaID: string) => {
     // Your password must include this CAPTCHA
-    return true;
+    const answer = await getAnswerCaptcha(CaptchaID);
+    if (!answer) return false;
+    return password.toLowerCase().includes(answer)
 }
 
 const level13 = (password: string) => {
     // Your password must include a leap year
-    return true;
+    const year = password.match(/\d+/g);
+    console.log(year)
+    if (!year) return false;
+
+    for (let i = 0; i < year.length; i++) {
+        if (parseInt(year[i]) % 4 === 0) {
+            if (parseInt(year[i]) % 100 === 0) {
+                if (parseInt(year[i]) % 400 === 0) {
+                    return true;
+                }
+            } else {
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
-const level14 = (password: string, X: number, Y: number) => {
-    // 🐔 Paul has hatched ! Please don’t forget to feed him. He eats X 🐛 every Y second
-    return true;
+const level14 = (password: string, X: number) => {
+    return password.match(/🐛/g)?.length === X;
 }
 
 const level15 = (password: string, number: string) => {

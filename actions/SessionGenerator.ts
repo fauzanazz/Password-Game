@@ -21,15 +21,17 @@ export const configGenerator = async () => {
     const WormsEaten = Math.floor(Math.random() * 8) + 1;
     const WormsUpdateRate = (Math.floor(Math.random() * 5) + 1) * 15;
     const LetterBanned = getRandomLetter();
+    const MinimumDigits = Math.floor(Math.random() * 30) + 10;
 
     const config: SessionConfig = {
         passLength,
         sumDigits,
         countryID: countryID,
         RomanNumeralMult,
-        CapchaID: CapchaID,
+        CaptchaID: CapchaID,
         WormsEaten,
         WormsUpdateRate,
+        MinimumDigits,
         LetterBanned
     };
 
@@ -57,3 +59,4 @@ export async function getRandomEntryCaptcha() {
 
     return randomEntry[0];
 }
+
