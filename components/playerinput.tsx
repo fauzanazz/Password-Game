@@ -1,14 +1,13 @@
 "use client";
-import React, {useState, useRef, useEffect} from "react";
-import { RulesData } from "@/components/Rules/RuleCard";
+import React, {useEffect, useRef, useState} from "react";
+import {RulesData} from "@/components/Rules/RuleCard";
 import Rules from "@/components/Rules/Rules";
-import { SessionConfig, PasswordChecker } from "@/PasswordChecker";
-import { configGenerator } from "@/actions/SessionGenerator";
+import {PasswordChecker, SessionConfig} from "@/PasswordChecker";
+import {configGenerator} from "@/actions/SessionGenerator";
 import FinishScreen from "@/components/FinishScreen";
 import useAutosizeText from "@/components/AutoSizeText";
-import { generateSetRules } from "@/components/Rules/SetRules";
-import {Simulate} from "react-dom/test-utils";
-import input = Simulate.input;
+import {generateSetRules} from "@/components/Rules/SetRules";
+import './playerinput.css';
 
 const PlayerInput = () => {
     const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -30,7 +29,8 @@ const PlayerInput = () => {
     });
     const [booleanData, setBooleanData] = useState<Record<number, boolean>>({});
     const [rules, setRules] = useState<RulesData[]>([]);
-    useAutosizeText(inputRef.current, password);
+    const higlightRef = useRef<HTMLDivElement>(null);
+    const backdropRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => { // Config and rules generation
         const fetchData = async () => {
@@ -108,12 +108,66 @@ const PlayerInput = () => {
         };
     }, [isFireLevel]);
 
+    useEffect(() => {
+        const handleInput = () => {
+            const text = inputRef.current?.value || "";
+            // Example highlighting logic: Highlight all digits
+            const highlightedText = text.replace(/\d/g, '<mark>$&</mark>');
+            if (higlightRef.current) {
+                higlightRef.current.innerHTML = highlightedText;
+            }
+        };
+
+        const handleScroll = () => {
+            if (backdropRef.current && higlightRef.current) {
+                backdropRef.current.scrollTop = inputRef.current?.scrollTop || 0;
+                backdropRef.current.scrollLeft = inputRef.current?.scrollLeft || 0;
+            }
+        };
+
+        inputRef.current?.addEventListener('input', handleInput);
+        inputRef.current?.addEventListener('scroll', handleScroll);
+
+        // Cleanup
+        return () => {
+            inputRef.current?.removeEventListener('input', handleInput);
+            inputRef.current?.removeEventListener('scroll', handleScroll);
+        };
+    }, [backdropRef, higlightRef]);
+
     const handleChange = async (event: React.ChangeEvent<HTMLTextAreaElement> | null, directValue?: string) => {
         let input = directValue;
         if (event) {
             input = event.target.value;
         }
         setPassword(input? input : "");
+
+        const highlight = (level: number) => {
+
+            let maxRedLevel ;
+            for (let i = 1; i <= level; i++) {
+                if (!booleanData[i]) {
+                    maxRedLevel = i;
+                }
+            }
+
+            switch (maxRedLevel) {
+                case 5:
+                    // Highlight all numbers
+
+                    break;
+                case 9:
+                    // Highlight all Roman numerals
+
+
+                    break;
+                default:
+                    // Remove all span
+                    input = input?.replace(/<span style="color: red">/g, "");
+                    input = input?.replace(/<\/span>/g, "");
+                    break;
+            }
+        }
 
         const preProcessLevel = async (currentLevel: number) => {
             switch (currentLevel) {
@@ -150,6 +204,8 @@ const PlayerInput = () => {
 
             if (result == null) return;
             setBooleanData(result);
+            highlight(currentLevel);
+
 
             if (!result[currentLevel]) return;
             if (currentLevel === 21) {
@@ -184,18 +240,26 @@ const PlayerInput = () => {
             <div className="text-center relative h-[50%]">
                 <h1 className="text-4xl font-serif mb-8">✶ The Password Game</h1>
                 <label className="block text-lg mb-2">Please choose a password</label>
-                <div className="flex justify-center">
+                <div className="containerH">
+                    <div
+                        className="backdrop"
+                        ref={backdropRef}
+                    >
+                        <div className="highlights" ref={higlightRef}></div>
+                    </div>
                     <textarea
                         onChange={handleChange}
                         placeholder="Enter your password"
                         ref={inputRef}
                         rows={1}
                         value={password}
-                        className="border rounded-lg p-2 w-96 resize-none"
+                        className=""
                     />
-                    <label className="text-lg ml-2 p-2"> {Array.from(password).length === 0 ? "" : Array.from(password).length} </label>
+
                 </div>
-                <FinishScreen win="You win" lose="You lose" state={isWinning} isVisible={isFinished} onClose={()=> setIsFinished(false)}/>
+                <label className="text-lg ml-2 p-2"> {Array.from(password).length === 0 ? "" : Array.from(password).length} </label>
+                <FinishScreen win="You win" lose="You lose" state={isWinning} isVisible={isFinished}
+                              onClose={() => setIsFinished(false)}/>
             </div>
             <div className="absolute top-[75%]">
                 <Rules rules={rules} level={level} config={config} data={booleanData}/>
