@@ -223,8 +223,9 @@ const PlayerInput = () => {
 
             if (!result[currentLevel]) return;
             if (currentLevel === 21) {
-                setIsFinished(true);
                 setIsWinning(true);
+                setIsFinished(true);
+                return;
             } else {
                 setLevel(currentLevel + 1);
                 // When level up is called, set the next level first before processing
@@ -266,7 +267,7 @@ const PlayerInput = () => {
                     />
 
                 </div>
-                <label className="text-lg ml-2 p-2"> {Array.from(password).length === 0 ? "" : Array.from(password).length} </label>
+                <label className="text-lg ml-[400px] p-2 h-5"> {Array.from(password).length === 0 ? "" : Array.from(password).length} </label>
                 <FinishScreen win="You win" lose="You lose" state={isWinning} isVisible={isFinished}
                               onClose={() => setIsFinished(false)}/>
             </div>

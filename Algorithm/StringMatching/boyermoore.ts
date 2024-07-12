@@ -30,4 +30,5 @@ const boyermoore = (text: string, pattern: string): number[] => {
     return result;
 }
 
+
 export default boyermoore;

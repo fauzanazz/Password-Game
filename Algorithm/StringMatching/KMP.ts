@@ -1,5 +1,5 @@
 const makeKMPTable = (pattern: string) => {
-    const table = Array(pattern.length).fill(0);
+    const table = new Array(pattern.length).fill(0);
     let prefixIndex = 0;
     for (let i = 1; i < pattern.length; i++) {
         while (prefixIndex > 0 && pattern[i] !== pattern[prefixIndex]) {
@@ -23,7 +23,7 @@ const KMP = async (text: string, pattern: string) => {
             textIndex++;
             patternIndex++;
             if (patternIndex === pattern.length) {
-                return textIndex - patternIndex; // Match found
+                return textIndex - patternIndex;
             }
         } else if (patternIndex > 0) {
             patternIndex = kmpTable[patternIndex - 1];
