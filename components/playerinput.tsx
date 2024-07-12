@@ -201,7 +201,7 @@ const PlayerInput = () => {
             }
 
             if (isChickenLevel){
-                const isChicken = input?.match(/🐛/g)?.length === config.WormsEaten;
+                const isChicken = input?.match(/🐔/g)?.length;
                 if (isChicken) return;
                 setIsFinished(true);
             }
