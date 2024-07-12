@@ -1,27 +1,13 @@
-*, *::before, *::after {
-    box-sizing: border-box;
-}
-
-body {
-    margin: 30px;
-    background-color: #f0f0f0;
-}
-
-.container, .backdrop, textarea {
+.backdrop, textarea {
     width: 460px;
     height: 180px;
-}
-
-.backdrop, textarea {
-    width: 460px; /* Ensure matching width */
-    height: 180px; /* Ensure matching height */
-    padding: 10px; /* Ensure matching padding */
+    padding: 10px;
 }
 
 .highlights, textarea {
-    text-align: left; /* Ensure text starts from the left */
-    font: 20px/28px 'Open Sans', sans-serif; /* Ensure matching font styles */
-    letter-spacing: 1px; /* Ensure matching letter spacing */
+    text-align: left;
+    font: 20px/28px 'Open Sans', sans-serif;
+    letter-spacing: 1px;
 }
 
 .containerH {

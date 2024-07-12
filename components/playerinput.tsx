@@ -111,12 +111,35 @@ const PlayerInput = () => {
     useEffect(() => {
         const handleInput = () => {
             const text = inputRef.current?.value || "";
-            // Example highlighting logic: Highlight all digits
-            const highlightedText = text.replace(/\d/g, '<mark>$&</mark>');
-            if (higlightRef.current) {
-                higlightRef.current.innerHTML = highlightedText;
+
+            let maxRed = 0;
+            for (let i = 1; i <= level; i++) {
+                if (!booleanData[i]) {
+                    maxRed = i;
+                }
+            }
+
+            switch (maxRed) {
+                case 5:
+                    const highlightedText = text.replace(/\d/g, '<mark>$&</mark>');
+                    if (higlightRef.current) {
+                        higlightRef.current.innerHTML = highlightedText;
+                    }
+                    break;
+                case 9:
+                    const highlightedTextRoman = text.replace(/[IVXLCDM]+/g, (match) => `<mark>${match}</mark>`);
+                    if (higlightRef.current) {
+                        higlightRef.current.innerHTML = highlightedTextRoman;
+                    }
+                    break;
+                default:
+                    if (higlightRef.current) {
+                        higlightRef.current.innerHTML = text;
+                    }
+                    break;
             }
         };
+        handleInput()
 
         const handleScroll = () => {
             if (backdropRef.current && higlightRef.current) {
@@ -124,16 +147,14 @@ const PlayerInput = () => {
                 backdropRef.current.scrollLeft = inputRef.current?.scrollLeft || 0;
             }
         };
-
         inputRef.current?.addEventListener('input', handleInput);
         inputRef.current?.addEventListener('scroll', handleScroll);
-
         // Cleanup
         return () => {
             inputRef.current?.removeEventListener('input', handleInput);
             inputRef.current?.removeEventListener('scroll', handleScroll);
         };
-    }, [backdropRef, higlightRef]);
+    }, [backdropRef, higlightRef, booleanData, level]);
 
     const handleChange = async (event: React.ChangeEvent<HTMLTextAreaElement> | null, directValue?: string) => {
         let input = directValue;
@@ -141,33 +162,6 @@ const PlayerInput = () => {
             input = event.target.value;
         }
         setPassword(input? input : "");
-
-        const highlight = (level: number) => {
-
-            let maxRedLevel ;
-            for (let i = 1; i <= level; i++) {
-                if (!booleanData[i]) {
-                    maxRedLevel = i;
-                }
-            }
-
-            switch (maxRedLevel) {
-                case 5:
-                    // Highlight all numbers
-
-                    break;
-                case 9:
-                    // Highlight all Roman numerals
-
-
-                    break;
-                default:
-                    // Remove all span
-                    input = input?.replace(/<span style="color: red">/g, "");
-                    input = input?.replace(/<\/span>/g, "");
-                    break;
-            }
-        }
 
         const preProcessLevel = async (currentLevel: number) => {
             switch (currentLevel) {
@@ -204,8 +198,12 @@ const PlayerInput = () => {
 
             if (result == null) return;
             setBooleanData(result);
-            highlight(currentLevel);
 
+            for (let i = 1; i <= currentLevel; i++) { // If some level not passed yet, return
+                if (!result[i]) {
+                    return;
+                }
+            }
 
             if (!result[currentLevel]) return;
             if (currentLevel === 21) {
