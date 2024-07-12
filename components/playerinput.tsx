@@ -181,6 +181,7 @@ const PlayerInput = () => {
                     break;
                 case 14:
                     setIsChickenLevel(true);
+                    setIsEggLevel(false);
                     const current = inputRef.current?.value || "";
                     const newval = current.replace("🥚", "🐔");
                     inputRef.current!.value = newval;
@@ -191,8 +192,23 @@ const PlayerInput = () => {
                     break;
             }
         }
+
+        const SpecialEndings = () => {
+            if (isEggLevel){
+                const isEgg = input?.includes("🥚");
+                if (isEgg) return;
+                setIsFinished(true);
+            }
+
+            if (isChickenLevel){
+                const isChicken = input?.match(/🐛/g)?.length === config.WormsEaten;
+                if (isChicken) return;
+                setIsFinished(true);
+            }
+        }
         const processLevel = async (currentLevel: number) => {
 
+            SpecialEndings();
             if (input === undefined) return;
             const result = await PasswordChecker(input,currentLevel, config);
 
@@ -226,11 +242,6 @@ const PlayerInput = () => {
         }
 
         await processLevel(level);
-    };
-
-    const setPasswordAndTriggerChange = (newPassword: string) => {
-        setPassword(newPassword);
-        handleChange(null, newPassword).then(r => r);
     };
 
     return (
