@@ -78,7 +78,7 @@ const isCheatUsed = (password: string) => {
 
 const level1 = (password: string, length: number) => {
     // Password must be at least X characters long
-    return password.length >= length;
+    return Array.from(password).length >= length;
 }
 
 const level2 = (password: string) => {
