@@ -21,13 +21,13 @@ export const PasswordChecker = async (password: string, level: number, config: S
     const result: Record<number, boolean> = {};
 
     for (let i = 1; i <= level; i++) {
-        result[i] = await Runner(password, i, config);
+        result[i] = await Runner(password, i, level, config);
     }
 
     return result;
 };
 
-const Runner = (password: string, level: number, config: SessionConfig) => {
+const Runner = (password: string, level: number, currentLevel: number, config: SessionConfig) => {
     switch (level) {
         case 1:
             return level1(password, config.passLength);
@@ -50,13 +50,13 @@ const Runner = (password: string, level: number, config: SessionConfig) => {
         case 10:
             return level10(password);
         case 11:
-            return level11(password);
+            return level11(password, currentLevel);
         case 12:
             return level12(password, config.CaptchaID);
         case 13:
             return level13(password);
         case 14:
-            return level14(password, config.WormsEaten);
+            return level14(password, config.WormsEaten, currentLevel);
         case 15:
             return level15(password, config.LetterBanned);
         case 16:
@@ -179,9 +179,10 @@ const level10 = (password: string) => {
     return boyerMoore[0] !== -1;
 }
 
-const level11 = (password: string) => {
+const level11 = (password: string, currentLevel: number) => {
     //🥚 This is my chicken Paul. He hasn’t hatched yet. Please put him in your password and keep him safe
-    return password.includes("🥚");
+    console.log(currentLevel);
+    return password.includes("🥚") || currentLevel >= 14;
 }
 
 const level12 = async (password: string, CaptchaID: string) => {
@@ -212,10 +213,10 @@ const level13 = (password: string) => {
     return false;
 }
 
-const level14 = (password: string, X: number) => {
+const level14 = (password: string, X: number, currentLevel: number) => {
     const worms = password.match(/🐛/g);
     if (!worms) return false;
-    return worms.length >= X;
+    return worms.length >= X || currentLevel >= 15;
 }
 
 const level15 = (password: string, number: string) => {

@@ -193,8 +193,8 @@ const PlayerInput = () => {
             }
         }
 
-        const SpecialEndings = () => {
-            if (isEggLevel){
+        const SpecialEndings = (currentLevel : number) => {
+            if (isEggLevel && currentLevel < 14){
                 const isEgg = input?.includes("🥚");
                 if (isEgg) return;
                 setIsFinished(true);
@@ -208,7 +208,7 @@ const PlayerInput = () => {
         }
         const processLevel = async (currentLevel: number) => {
 
-            SpecialEndings();
+            SpecialEndings(currentLevel);
             if (input === undefined) return;
             const result = await PasswordChecker(input,currentLevel, config);
 
