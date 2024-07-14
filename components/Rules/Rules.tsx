@@ -1,5 +1,5 @@
 import { RulesData, RuleCard } from '@/components/Rules/RuleCard';
-import {SessionConfig} from "@/PasswordChecker";
+import {SessionConfig} from "@/actions/PasswordChecker";
 
 const Rules = ({ rules, level, config, data }: { rules: RulesData[]; level: number; config: SessionConfig; data: Record<number, boolean> }) => {
     const falseRules = rules.slice(0, level).filter((rule, index) => !data[index + 1]).reverse();

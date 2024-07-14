@@ -10,10 +10,10 @@ export const RuleCard = ({ rule, index, bool }: { index: number; rule: RulesData
     const image = rule.image ? base64ToBlob(rule.image): null;
 
     return (
-        <div className={`border rounded-lg p-4 w-96 text-left ${bool ? 'bg-green-500' : 'bg-red-500'}`}>
-            <h2 className="text-xl font-semibold mb-2">{rule.title}</h2>
-            <div className="flex justify-between items-center mb-2">
-                <h3 className="text-lg font-semibold mb-2">{rule.description}</h3>
+        <div className={`border-2 rounded-lg p-4 w-[450px] text-left shadow-md ${bool ? 'bg-green-100 border-green-500' : 'bg-red-100 border-red-500'}`}>
+            <h2 className="text-xl font-semibold">{rule.title}</h2>
+            <div className="flex justify-between items-center">
+                <h3 className="text-lg">{rule.description}</h3>
                 {image && <Image src={URL.createObjectURL(image)} alt="rule image" width={150} height={150} className="border-b-black border-2" />}
             </div>
         </div>

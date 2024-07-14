@@ -1,4 +1,4 @@
-import {SessionConfig} from "@/PasswordChecker";
+import {SessionConfig} from "@/actions/PasswordChecker";
 import { getImageFlag, getImageCaptcha } from "@/actions/database";
 
 export const generateSetRules = async (config : SessionConfig ) =>[
@@ -62,7 +62,7 @@ export const generateSetRules = async (config : SessionConfig ) =>[
     },
     {
         title: "Rule 15",
-        description: () => `A sacrifice must be made. Pick X letters that you will no longer be able to use`
+        description: () => `A sacrifice must be made. Pick ${config.RandomBannedWord} letters that you will no longer be able to use`
     },
     {
         title: "Rule 16",
@@ -82,6 +82,6 @@ export const generateSetRules = async (config : SessionConfig ) =>[
     },
     {
         title: "Rule 20",
-        description: () => `Your password must include the current time`
+        description: () => `Your password must include the current time "HH:MM:SS"`
     },
 ];
