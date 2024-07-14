@@ -1,6 +1,5 @@
 import { getAnswerCaptcha, getAnswerCountryFlag } from "@/actions/database";
 import KMP from "@/Algorithm/StringMatching/KMP";
-import Boyermoore from "@/Algorithm/StringMatching/boyermoore";
 
 
 export interface SessionConfig {
@@ -11,23 +10,25 @@ export interface SessionConfig {
     CaptchaID: string;
     WormsEaten: number;
     WormsUpdateRate: number;
+    RandomBannedWord: number;
+    BannedWord: string;
     MinimumDigits: number;
-    LetterBanned: string;
 }
+
 const debuggingMode = true;
-export const PasswordChecker = async (password: string, level: number, config: SessionConfig): Promise<Record<number, boolean> | null> => {
+export const PasswordChecker = async (password: string, level: number, config: SessionConfig, letterBanned: string): Promise<Record<number, boolean> | null> => {
     if (isCheatUsed(password)) return null;
 
     const result: Record<number, boolean> = {};
 
     for (let i = 1; i <= level; i++) {
-        result[i] = await Runner(password, i, level, config);
+        result[i] = await Runner(password, i, level, config, letterBanned);
     }
 
     return result;
 };
 
-const Runner = (password: string, level: number, currentLevel: number, config: SessionConfig) => {
+const Runner = async (password: string, level: number, currentLevel: number, config: SessionConfig, letterBanned: string) => {
     switch (level) {
         case 1:
             return level1(password, config.passLength);
@@ -44,7 +45,7 @@ const Runner = (password: string, level: number, currentLevel: number, config: S
         case 7:
             return level7(password);
         case 8:
-            return level8(password, config.countryID);
+            return await level8(password, config.countryID);
         case 9:
             return level9(password, config.RomanNumeralMult);
         case 10:
@@ -58,17 +59,17 @@ const Runner = (password: string, level: number, currentLevel: number, config: S
         case 14:
             return level14(password, config.WormsEaten, currentLevel);
         case 15:
-            return level15(password, config.LetterBanned);
+            return level15(password, letterBanned, config.RandomBannedWord);
         case 16:
             return level16(password);
         case 17:
             return level17(password);
         case 18:
-            return level18(password);
+            return await level18(password);
         case 19:
             return level19(password);
         case 20:
-            return level20(password);
+            return await level20(password);
         default:
             return false;
     }
@@ -80,27 +81,36 @@ const isCheatUsed = (password: string) => {
 }
 
 const level1 = (password: string, length: number) => {
+    if (debuggingMode) return true;
+
     // Password must be at least X characters long
     return Array.from(password).length >= length;
 }
 
 const level2 = (password: string) => {
+    if (debuggingMode) return true;
+
     // Password must contain at least one number
     return /\d/.test(password);
 }
 
 const level3 = (password: string) => {
+    if (debuggingMode) return true;
+
     // Password must contain at least one uppercase letter
     return /[A-Z]/.test(password);
 }
 
 const level4 = (password: string) => {
+    if (debuggingMode) return true;
+
     // Password must contain at least one special character
     return /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(password);
 }
 
 const level5 = (password: string, sum: number) => {
     if (debuggingMode) return true;
+
     // The digits in your password must add up to X
     const digits = password.match(/\d/g);
     const sumDigits = digits ? digits.reduce((acc, digit) => acc + parseInt(digit), 0) : 0;
@@ -108,29 +118,33 @@ const level5 = (password: string, sum: number) => {
 }
 
 const level6 = (password: string) => {
+    if (debuggingMode) return true;
+
     // Password must include a month of the year
     return password.toLowerCase().match(/january|february|march|april|may|june|july|august|september|october|november|december/) !== null;
 }
 
 const level7 = (password: string) => {
+    if (debuggingMode) return true;
+
     // Password must include a Roman numeral
     return password.match(/[IVXLCDM]/) !== null;
 }
 
 const level8 = async (password: string, countryID: string) => {
     if (debuggingMode) return true;
+
     // Password must include one of this country
     const answer = await getAnswerCountryFlag(countryID);
     if (!answer) return false;
     const passwordLower = password.toLowerCase();
-    console.log(passwordLower, answer)
-    const kmp = await KMP(passwordLower, answer.toLowerCase());
-    console.log(kmp);
+    const kmp = KMP(passwordLower, answer.toLowerCase());
     return kmp != -1;
 }
 
 const level9 = (password: string, product: number) => {
     if (debuggingMode) return true;
+
     // The Roman numerals in your password should multiply to X
     const romanNumerals = password.match(/[IVXLCDM]+/g);
     let productRoman = 1;
@@ -173,27 +187,36 @@ const level9 = (password: string, product: number) => {
     return productRoman === product
 }
 
-const level10 = (password: string) => {
+const level10 = async (password: string) => {
+    if (debuggingMode) return true;
+
     // Oh no! Your password is on fire 🔥. Quick, put it out!
-    const boyerMoore = Boyermoore(password,"🔥" );
-    return boyerMoore[0] !== -1;
+    const fireEmojiPattern = /🔥/;
+    return !fireEmojiPattern.test(password);
+
 }
 
 const level11 = (password: string, currentLevel: number) => {
+    if (debuggingMode) return true;
+
     //🥚 This is my chicken Paul. He hasn’t hatched yet. Please put him in your password and keep him safe
-    console.log(currentLevel);
-    return password.includes("🥚") || currentLevel >= 14;
+    const kmp = KMP(password, "🥚");
+    return kmp != -1 || currentLevel >= 14;
 }
 
 const level12 = async (password: string, CaptchaID: string) => {
+    if (debuggingMode) return true;
+
     // Your password must include this CAPTCHA
     const answer = await getAnswerCaptcha(CaptchaID);
     if (!answer) return false;
-    const kmp = await KMP(password, answer);
+    const kmp = KMP(password, answer);
     return kmp != -1;
 }
 
 const level13 = (password: string) => {
+    if (debuggingMode) return true;
+
     // Your password must include a leap year
     const year = password.match(/\d+/g);
     if (!year) return false;
@@ -214,42 +237,55 @@ const level13 = (password: string) => {
 }
 
 const level14 = (password: string, X: number, currentLevel: number) => {
+    if (debuggingMode) return true;
+
     const worms = password.match(/🐛/g);
     if (!worms) return false;
     return worms.length >= X || currentLevel >= 15;
 }
 
-const level15 = (password: string, number: string) => {
+const level15 = (password: string, char: string, lengthChar: number) => {
+    if (debuggingMode) return true;
+
     // A sacrifice must be made. Pick X letters that you will no longer be able to use
-    return true;
+    const arrayChar = Array.from(char);
+    const set = new Set(arrayChar);
+    if (set.size !== lengthChar) return false;
+    const banned = RegExp(char, "i");
+    return !password.match(banned);
 }
 
 const level16 = (password: string) => {
+    if (debuggingMode) return true;
+
     // Your password must contain one of the following words: I want IRK | I need IRK | I love IRK
     const words = ["I want IRK", "I need IRK", "I love IRK"];
     return words.some(word => password.includes(word));
 }
 
 const level17 = (password: string) => {
-    // At least X% of your password must be in digits
     if (debuggingMode) return true;
+
+    // At least X% of your password must be in digits
     const digits = password.match(/\d/g);
     if (!digits) return false;
     return digits.length / password.length >= 0.01;
 }
 
 const level18 = async (password: string) => {
-    // Your password must include the length of your password
     if (debuggingMode) return true;
+
+    // Your password must include the length of your password
     const length = Array.from(password).length.toString();
-    const kmp = await KMP(password, length);
+    const kmp = KMP(password, length);
     return kmp != -1;
 }
 
 const level19 = (password: string) => {
-    // The length of your password must be a prime number
     if (debuggingMode) return true;
-    const length =Array.from(password).length;
+
+    // The length of your password must be a prime number
+    const length = Array.from(password).length;
     if (length <= 1) return false;
     for (let i = 2; i <= Math.sqrt(length); i++) {
         if (length % i === 0) return false;
@@ -258,10 +294,11 @@ const level19 = (password: string) => {
 }
 
 const level20 = async (password: string) => {
-    // Your password must include the current time
-    const time = new Date().toLocaleTimeString();
-    console.log(time)
-    const kmp = await KMP(password, time);
+    if (debuggingMode) return true;
+
+    // Your password must include the current time in 24-hour format
+    const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+    const kmp = KMP(password, time);
     return kmp != -1;
 }
 

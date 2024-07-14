@@ -13,7 +13,7 @@ const makeKMPTable = (pattern: string) => {
     return table;
 };
 
-const KMP = async (text: string, pattern: string) => {
+const KMP = (text: string, pattern: string) => {
     if (pattern === "") return 0; // Edge case if pattern is empty
     const kmpTable = makeKMPTable(pattern);
     let textIndex = 0;

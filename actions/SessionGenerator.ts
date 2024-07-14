@@ -1,38 +1,32 @@
 "use server";
 
-
 import {db} from "@/lib/db";
-import {SessionConfig} from "@/PasswordChecker";
-
-function getRandomLetter(): string {
-    const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-    const randomIndex = Math.floor(Math.random() * alphabet.length);
-    return alphabet[randomIndex];
-}
+import {SessionConfig} from "@/actions/PasswordChecker";
 
 export const configGenerator = async () => {
     const passLength = Math.floor(Math.random() * 5) + 5;
-    const sumDigits = Math.floor(Math.random() * 50) + 10;
+    const sumDigits = Math.floor(Math.random() * 50) + 20;
     const country = await getRandomEntryFlag();
     const countryID = country.id;
     const RomanNumeralMult = (Math.floor(Math.random() * 5) * 5) + 20;
     const Capcha = await getRandomEntryCaptcha();
-    const CapchaID = Capcha.id;
+    const CaptchaID = Capcha.id;
     const WormsEaten = Math.floor(Math.random() * 8) + 1;
     const WormsUpdateRate = (Math.floor(Math.random() * 5) + 1) * 15;
-    const LetterBanned = getRandomLetter();
+    const RandomBannedWord = Math.floor(Math.random() * 2) + 1;
     const MinimumDigits = Math.floor(Math.random() * 30) + 10;
 
     const config: SessionConfig = {
         passLength,
         sumDigits,
-        countryID: countryID,
+        countryID,
         RomanNumeralMult,
-        CaptchaID: CapchaID,
+        CaptchaID,
         WormsEaten,
         WormsUpdateRate,
+        RandomBannedWord,
+        BannedWord: "",
         MinimumDigits,
-        LetterBanned
     };
 
     return config;
