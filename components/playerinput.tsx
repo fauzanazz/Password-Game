@@ -9,6 +9,7 @@ import {generateSetRules} from "@/components/Rules/SetRules";
 import './playerinput.css';
 import CheatGenerator, {ConfigWrapper} from "@/actions/Cheat";
 import LoadingScreen from "@/components/LoadingScreen";
+import ScorePassword from "@/components/ScorePassword";
 
 const PlayerInput = () => {
     const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -175,13 +176,14 @@ const PlayerInput = () => {
     }, [backdropRef, higlightRef, booleanData, level, password]);
 
     useEffect(() => {
-        if (!isChickenLevel) return;
+        if (!isChickenLevel || isCheatUsed) return;
         
         let intervalChicken: NodeJS.Timeout | undefined;
         
         if (config === undefined || config.config.WormsUpdateRate === 0) return;
         
         intervalChicken = setInterval(() => {
+            if (isCheatUsed) return;
             let current = inputRef.current?.value || "";
             const worms = current.match(/🐛/g);
 
@@ -211,7 +213,7 @@ const PlayerInput = () => {
         };
     }, [config, isCheatUsed, isChickenLevel]);
 
-    const preProcessLevel = async (currentLevel: number, input: string) => {
+    const preProcessLevel = async (currentLevel: number, input: string, isCheatUsed: boolean) => {
         switch (currentLevel) {
             case 10:
                 if (isCheatUsed) return;
@@ -258,7 +260,7 @@ const PlayerInput = () => {
             setIsFinished(true);
         }
     }
-    const processLevel = async (currentLevel: number, input: string) => {
+    const processLevel = async (currentLevel: number, input: string, isCheatUsed: boolean) => {
 
         SpecialEndings(currentLevel, input);
         if (input === undefined) return;
@@ -269,13 +271,16 @@ const PlayerInput = () => {
             const password = await CheatGenerator(input, config, bannedWord);
             if (password === "") return;
 
-            // Fix bugs?
             const pass = password.substring(0, password.length - 2);
 
             setPassword(pass);
             inputRef.current!.value = pass;
             setIsLoadingCheat(false);
-            setIsCheatUsed(true)
+            setIsCheatUsed(true);
+
+            const isCheatUsedNow = true;
+
+            await processLevel(currentLevel, pass, isCheatUsedNow);
             return;
         }
         setBooleanData(result);
@@ -295,8 +300,8 @@ const PlayerInput = () => {
             setLevel(currentLevel + 1);
             // When level up is called, set the next level first before processing
             // If the next level need some special changes to input
-            await preProcessLevel(currentLevel + 1, input);
-            await processLevel(currentLevel + 1, input);
+            await preProcessLevel(currentLevel + 1, input, isCheatUsed);
+            await processLevel(currentLevel + 1, input, isCheatUsed);
         }
     };
 
@@ -311,17 +316,17 @@ const PlayerInput = () => {
         if (!isStarted) {
             setIsStarted(true);
             setLevel(1);
-            await processLevel(1, input);
+            await processLevel(1, input, isCheatUsed);
             return;
         }
 
-        await processLevel(level, input);
+        await processLevel(level, input, isCheatUsed);
     };
 
     const ExtraInput = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const value = event.target.value;
         setBannedWord(value);
-        await processLevel(level, password);
+        await processLevel(level, password, isCheatUsed);
     }
 
     return (
@@ -354,14 +359,18 @@ const PlayerInput = () => {
 
             </div>
             <div className="flex flex-col text-center items-center justify-center w-full gap-y-5">
+                <ScorePassword password={password}/>
+            </div>
+            <div className={`flex flex-col text-center items-center justify-center w-full gap-y-5 ${level >= 15 ? "" : "hidden"}`}>
+                <label className="text-lg">Enter the banned word</label>
                 <input
-                    className={`py-2 px-4 w-[450px] rounded-lg border-black border-2 shadow-md ${level >= 15 ? "" : "hidden"}`}
+                    className={`py-2 px-4 w-[450px] rounded-lg border-black border-2 shadow-md`}
                     type="text"
                     placeholder="Enter the banned word"
                     onChange={ExtraInput}
                 />
             </div>
-            <div className="">
+            <div>
                 <Rules rules={rules} level={level} config={config.config} data={booleanData}/>
             </div>
         </div>
