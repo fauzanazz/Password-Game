@@ -5,7 +5,7 @@ import {SessionConfig} from "@/actions/PasswordChecker";
 
 export const configGenerator = async () => {
     const passLength = Math.floor(Math.random() * 5) + 5;
-    const sumDigits = Math.floor(Math.random() * 50) + 20;
+    const sumDigits = Math.floor(Math.random() * 50) + 30;
     const country = await getRandomEntryFlag();
     const countryID = country.id;
     const RomanNumeralMult = (Math.floor(Math.random() * 5) * 5) + 20;

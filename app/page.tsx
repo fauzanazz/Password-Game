@@ -2,7 +2,7 @@ import PlayerInput from "@/components/playerinput";
 
 export default function Home() {
     return (
-        <main>
+        <main className=" h-full w-full ">
             <PlayerInput />
         </main>
     );

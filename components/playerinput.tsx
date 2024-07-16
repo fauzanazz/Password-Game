@@ -2,13 +2,13 @@
 import React, {useEffect, useRef, useState} from "react";
 import {RulesData} from "@/components/Rules/RuleCard";
 import Rules from "@/components/Rules/Rules";
-import {PasswordChecker, SessionConfig} from "@/actions/PasswordChecker";
+import {PasswordChecker} from "@/actions/PasswordChecker";
 import {configGenerator} from "@/actions/SessionGenerator";
 import FinishScreen from "@/components/FinishScreen";
-import useAutosizeText from "@/components/AutoSizeText";
 import {generateSetRules} from "@/components/Rules/SetRules";
 import './playerinput.css';
-import {hidden} from "next/dist/lib/picocolors";
+import CheatGenerator, {ConfigWrapper} from "@/actions/Cheat";
+import LoadingScreen from "@/components/LoadingScreen";
 
 const PlayerInput = () => {
     const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -17,18 +17,22 @@ const PlayerInput = () => {
     const [isStarted, setIsStarted] = useState(false);
     const [isWinning, setIsWinning] = useState(false);
     const [isFinished, setIsFinished] = useState(false);
-    const [config, setConfig] = useState<SessionConfig>({
-        passLength: 0,
-        sumDigits: 0,
-        countryID: "0",
-        RomanNumeralMult: 0,
-        CaptchaID: "0",
-        WormsEaten: 0,
-        WormsUpdateRate: 0,
-        RandomBannedWord: 0,
-        BannedWord: "",
-        MinimumDigits: 0
-    });
+    const [config, setConfig] = useState<ConfigWrapper>(
+        {
+            config: {
+                passLength: 0,
+                sumDigits: 0,
+                countryID: "",
+                RomanNumeralMult: 0,
+                CaptchaID: "",
+                WormsEaten: 0,
+                WormsUpdateRate: 0,
+                RandomBannedWord: 0,
+                BannedWord: "",
+                MinimumDigits: 0,
+            }
+        }
+    );
     const [booleanData, setBooleanData] = useState<Record<number, boolean>>({});
     const [rules, setRules] = useState<RulesData[]>([]);
     const higlightRef = useRef<HTMLDivElement>(null);
@@ -45,7 +49,7 @@ const PlayerInput = () => {
                 index: index
             }));
             setRules(rulesData);
-            setConfig(data);
+            setConfig({config: data});
         };
 
         fetchData();
@@ -55,13 +59,15 @@ const PlayerInput = () => {
     const [isEggLevel, setIsEggLevel] = useState(false);
     const [isChickenLevel, setIsChickenLevel] = useState(false);
     const [bannedWord, setBannedWord] = useState("");
-
+    const [isLoadingCheat, setIsLoadingCheat] = useState(false);
+    const [isCheatUsed, setIsCheatUsed] = useState(false);
     useEffect(() => {
         // Random chance to set the fire level on again
-        if (level >= 11) {
+        if (level >= 11 && !isCheatUsed) {
             let intervalFireStarter: NodeJS.Timeout | undefined;
             if (intervalFireStarter !== undefined) return;
             intervalFireStarter = setInterval(() => {
+                if (isCheatUsed) return;
                 const randomChance = Math.floor(Math.random() * 100);
                 if (randomChance < 10) {
                     setIsFireLevel(true);
@@ -80,14 +86,14 @@ const PlayerInput = () => {
 
         // Exit early if isFireLevel is not true,
         // preventing the interval from being set
-        if (!isFireLevel) return;
+        if (!isFireLevel || isCheatUsed) return;
 
         let intervalId: NodeJS.Timeout | undefined;
         // Set the interval to update the textarea value
         intervalId = setInterval(() => {
-            // FUCNKING!!!
+            // FUCNKING!!! I WORK 8 HOURS JUST TO NOT KNOW THIS
             // https://stackoverflow.com/questions/38345372/why-does-a-string-containing-a-single-emoji-like-have-a-length-of-2
-            if (inputRef.current == null) return;
+            if (inputRef.current == null || isCheatUsed) return;
             const currentValue = Array.from(inputRef.current.value);
             const indexFire = currentValue.indexOf("🔥");
 
@@ -118,7 +124,7 @@ const PlayerInput = () => {
         return () => {
             if (intervalId) clearInterval(intervalId);
         };
-    }, [isFireLevel, level]);
+    }, [isFireLevel, level, isCheatUsed]);
 
     useEffect(() => {
         const handleInput = () => {
@@ -173,7 +179,7 @@ const PlayerInput = () => {
         
         let intervalChicken: NodeJS.Timeout | undefined;
         
-        if (config === undefined || config.WormsUpdateRate === 0) return;
+        if (config === undefined || config.config.WormsUpdateRate === 0) return;
         
         intervalChicken = setInterval(() => {
             let current = inputRef.current?.value || "";
@@ -186,9 +192,9 @@ const PlayerInput = () => {
 
             let newVal = Array.from(current);
 
-            for (let i = 0; i < config.WormsEaten; i++){
+            for (let i = 0; i < config.config.WormsEaten; i++){
                 const index = newVal.indexOf("🐛");
-                if (index === -1) {
+                if (index === -1 && !isCheatUsed) {
                     setIsFinished(true);
                     return;
                 }
@@ -197,17 +203,18 @@ const PlayerInput = () => {
             const newvalString = newVal.join("");
             inputRef.current!.value = newvalString;
             setPassword(newvalString);
-        }, config.WormsUpdateRate * 1000);
+        }, config.config.WormsUpdateRate * 1000);
 
         // Cleanup
         return () => {
             if (intervalChicken) clearInterval(intervalChicken);
         };
-    }, [config, isChickenLevel]);
+    }, [config, isCheatUsed, isChickenLevel]);
 
     const preProcessLevel = async (currentLevel: number, input: string) => {
         switch (currentLevel) {
             case 10:
+                if (isCheatUsed) return;
                 setIsFireLevel(true);
                 let currentInput = Array.from(input);
                 const lastIndex = currentInput.length - 1;
@@ -237,6 +244,8 @@ const PlayerInput = () => {
     }
 
     const SpecialEndings = (currentLevel : number, input: string) => {
+        if (isCheatUsed) return;
+
         if (isEggLevel && currentLevel < 14 && currentLevel > 11){
             const isEgg = input?.includes("🥚");
             if (isEgg) return;
@@ -253,10 +262,20 @@ const PlayerInput = () => {
 
         SpecialEndings(currentLevel, input);
         if (input === undefined) return;
-        const result = await PasswordChecker(input,currentLevel, config, bannedWord);
+        const result = await PasswordChecker(input,currentLevel, config.config, bannedWord, isLoadingCheat, isCheatUsed);
 
         if (result == null) {
-            // Cheat
+            setIsLoadingCheat(true);
+            const password = await CheatGenerator(input, config, bannedWord);
+            if (password === "") return;
+
+            // Fix bugs?
+            const pass = password.substring(0, password.length - 2);
+
+            setPassword(pass);
+            inputRef.current!.value = pass;
+            setIsLoadingCheat(false);
+            setIsCheatUsed(true)
             return;
         }
         setBooleanData(result);
@@ -307,6 +326,7 @@ const PlayerInput = () => {
 
     return (
         <div className="flex flex-col w-full p-8 items-center gap-y-5">
+            <LoadingScreen isVisible={isLoadingCheat}/>
             <div className="flex flex-col text-center items-center justify-center w-full gap-y-5">
                 <h1 className="text-4xl font-serif">✶ The Password Game</h1>
                 <label className="text-lg">Please choose a password</label>
@@ -331,6 +351,7 @@ const PlayerInput = () => {
                 </div>
                 <FinishScreen win="You win" lose="You lose" state={isWinning} isVisible={isFinished}
                               onClose={() => setIsFinished(false)}/>
+
             </div>
             <div className="flex flex-col text-center items-center justify-center w-full gap-y-5">
                 <input
@@ -341,7 +362,7 @@ const PlayerInput = () => {
                 />
             </div>
             <div className="">
-                <Rules rules={rules} level={level} config={config} data={booleanData}/>
+                <Rules rules={rules} level={level} config={config.config} data={booleanData}/>
             </div>
         </div>
     );

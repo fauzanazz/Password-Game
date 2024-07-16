@@ -1,5 +1,6 @@
 import { getAnswerCaptcha, getAnswerCountryFlag } from "@/actions/database";
 import KMP from "@/Algorithm/StringMatching/KMP";
+import {FindDifferenceTarget} from "@/actions/Cheat";
 
 
 export interface SessionConfig {
@@ -15,20 +16,20 @@ export interface SessionConfig {
     MinimumDigits: number;
 }
 
-const debuggingMode = true;
-export const PasswordChecker = async (password: string, level: number, config: SessionConfig, letterBanned: string): Promise<Record<number, boolean> | null> => {
+const debuggingMode = false;
+export const PasswordChecker = async (password: string, level: number, config: SessionConfig, letterBanned: string, isLoadingCheat: boolean, isCheat: boolean): Promise<Record<number, boolean> | null> => {
     if (isCheatUsed(password)) return null;
 
     const result: Record<number, boolean> = {};
 
     for (let i = 1; i <= level; i++) {
-        result[i] = await Runner(password, i, level, config, letterBanned);
+        result[i] = await Runner(password, i, level, config, letterBanned, isLoadingCheat, isCheat);
     }
 
     return result;
 };
 
-const Runner = async (password: string, level: number, currentLevel: number, config: SessionConfig, letterBanned: string) => {
+const Runner = async (password: string, level: number, currentLevel: number, config: SessionConfig, letterBanned: string, isLoadingCheat: boolean, isCheatUsed: boolean) => {
     switch (level) {
         case 1:
             return level1(password, config.passLength);
@@ -39,7 +40,7 @@ const Runner = async (password: string, level: number, currentLevel: number, con
         case 4:
             return level4(password);
         case 5:
-            return level5(password, config.sumDigits);
+            return level5(password, config.sumDigits, isLoadingCheat);
         case 6:
             return level6(password);
         case 7:
@@ -51,15 +52,15 @@ const Runner = async (password: string, level: number, currentLevel: number, con
         case 10:
             return level10(password);
         case 11:
-            return level11(password, currentLevel);
+            return level11(password, currentLevel, isCheatUsed);
         case 12:
             return level12(password, config.CaptchaID);
         case 13:
             return level13(password);
         case 14:
-            return level14(password, config.WormsEaten, currentLevel);
+            return level14(password, config.WormsEaten, currentLevel, isCheatUsed);
         case 15:
-            return level15(password, letterBanned, config.RandomBannedWord);
+            return level15(password, letterBanned, config.RandomBannedWord, isCheatUsed);
         case 16:
             return level16(password);
         case 17:
@@ -67,9 +68,9 @@ const Runner = async (password: string, level: number, currentLevel: number, con
         case 18:
             return await level18(password);
         case 19:
-            return level19(password);
+            return level19(password, isLoadingCheat);
         case 20:
-            return await level20(password);
+            return await level20(password, isCheatUsed);
         default:
             return false;
     }
@@ -108,13 +109,28 @@ const level4 = (password: string) => {
     return /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(password);
 }
 
-const level5 = (password: string, sum: number) => {
+const level5 = async (password: string, sum: number, isLoadingCheat: boolean) => {
     if (debuggingMode) return true;
+    const ArrayPassword = Array.from(password);
+    let PredictedSum = 0;
+
+    if (isLoadingCheat) {
+        PredictedSum = await FindDifferenceTarget(ArrayPassword, sum);
+    }
 
     // The digits in your password must add up to X
-    const digits = password.match(/\d/g);
-    const sumDigits = digits ? digits.reduce((acc, digit) => acc + parseInt(digit), 0) : 0;
-    return sumDigits === sum;
+    let sumPassword = 0;
+    ArrayPassword.forEach((char) => {
+        if (!isNaN(parseInt(char))) {
+            sumPassword += parseInt(char);
+        }
+    });
+
+    PredictedSum += sumPassword;
+
+    console.log(`Sum Password: ${sumPassword} Sum: ${sum} Predicted Sum: ${PredictedSum}`);
+
+    return sumPassword === sum || sumPassword === PredictedSum;
 }
 
 const level6 = (password: string) => {
@@ -149,35 +165,6 @@ const level9 = (password: string, product: number) => {
     const romanNumerals = password.match(/[IVXLCDM]+/g);
     let productRoman = 1;
 
-    function romanToNumber(roman: string) {
-        const romanMap: Record<string, number> = {
-            'I': 1,
-            'V': 5,
-            'X': 10,
-            'L': 50,
-            'C': 100,
-            'D': 500,
-            'M': 1000
-        };
-
-        let result = 0;
-        let prev = 0;
-
-        for (let i = roman.length - 1; i >= 0; i--) {
-            let current = romanMap[roman[i]];
-
-            if (current < prev) {
-                result -= current;
-            } else {
-                result += current;
-            }
-
-            prev = current;
-        }
-
-        return result;
-    }
-
     if (romanNumerals) {
         romanNumerals.forEach((roman) => {
             productRoman *= romanToNumber(roman);
@@ -185,6 +172,35 @@ const level9 = (password: string, product: number) => {
     }
 
     return productRoman === product
+}
+
+export function romanToNumber(roman: string) {
+    const romanMap: Record<string, number> = {
+        'I': 1,
+        'V': 5,
+        'X': 10,
+        'L': 50,
+        'C': 100,
+        'D': 500,
+        'M': 1000
+    };
+
+    let result = 0;
+    let prev = 0;
+
+    for (let i = roman.length - 1; i >= 0; i--) {
+        let current = romanMap[roman[i]];
+
+        if (current < prev) {
+            result -= current;
+        } else {
+            result += current;
+        }
+
+        prev = current;
+    }
+
+    return result;
 }
 
 const level10 = async (password: string) => {
@@ -196,8 +212,8 @@ const level10 = async (password: string) => {
 
 }
 
-const level11 = (password: string, currentLevel: number) => {
-    if (debuggingMode) return true;
+const level11 = (password: string, currentLevel: number, isCheatUsed: boolean) => {
+    if (debuggingMode || isCheatUsed) return true;
 
     //🥚 This is my chicken Paul. He hasn’t hatched yet. Please put him in your password and keep him safe
     const kmp = KMP(password, "🥚");
@@ -236,16 +252,16 @@ const level13 = (password: string) => {
     return false;
 }
 
-const level14 = (password: string, X: number, currentLevel: number) => {
-    if (debuggingMode) return true;
+const level14 = (password: string, X: number, currentLevel: number, isCheatUsed: boolean) => {
+    if (debuggingMode || isCheatUsed ) return true;
 
     const worms = password.match(/🐛/g);
     if (!worms) return false;
     return worms.length >= X || currentLevel >= 15;
 }
 
-const level15 = (password: string, char: string, lengthChar: number) => {
-    if (debuggingMode) return true;
+const level15 = (password: string, char: string, lengthChar: number, isLoadingCheat: boolean) => {
+    if (debuggingMode || isLoadingCheat) return true;
 
     // A sacrifice must be made. Pick X letters that you will no longer be able to use
     const arrayChar = Array.from(char);
@@ -281,11 +297,11 @@ const level18 = async (password: string) => {
     return kmp != -1;
 }
 
-const level19 = (password: string) => {
+const level19 = (password: string, isLoadingCheat: boolean) => {
     if (debuggingMode) return true;
 
     // The length of your password must be a prime number
-    const length = Array.from(password).length;
+    const length = isLoadingCheat? Array.from(password).length + 2 : Array.from(password).length;
     if (length <= 1) return false;
     for (let i = 2; i <= Math.sqrt(length); i++) {
         if (length % i === 0) return false;
@@ -293,8 +309,8 @@ const level19 = (password: string) => {
     return true;
 }
 
-const level20 = async (password: string) => {
-    if (debuggingMode) return true;
+const level20 = async (password: string, isCheatUsed: boolean) => {
+    if (debuggingMode || isCheatUsed) return true;
 
     // Your password must include the current time in 24-hour format
     const time = new Date().toLocaleTimeString('en-US', { hour12: false });

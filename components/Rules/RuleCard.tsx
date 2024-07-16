@@ -6,7 +6,7 @@ export interface RulesData {
     image?: String | null;
 }
 
-export const RuleCard = ({ rule, index, bool }: { index: number; rule: RulesData; bool: boolean }) => {
+export const RuleCard = ({ rule, bool }: { index: number; rule: RulesData; bool: boolean }) => {
     const image = rule.image ? base64ToBlob(rule.image): null;
 
     return (
