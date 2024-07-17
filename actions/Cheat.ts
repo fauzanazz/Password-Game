@@ -10,28 +10,28 @@ export interface ConfigWrapper {
     config: SessionConfig;
 }
 const CheatGenerator = async (password: string, configWrapper: ConfigWrapper, letterBanned: string) => {
-    // Correctly remove "cheat" from password using regex replacement
+
     const regex = /cheat/gi;
     password = password.replace(regex, "");
+
+    const regexFire = /🔥/gi;
+    password = password.replace(regexFire, "");
+
     const config = configWrapper.config;
 
     do {
-        const result = await PasswordChecker(password, 20, config, letterBanned, true, true);
+        const result = await PasswordChecker(password, 20, config, letterBanned, true, false);
 
         if (result === null) {
-            console.log("Cheat failed...", password);
             break;
         }
 
         const level = IsAllFinished(result, configWrapper);
         if (level === -1) {
-            console.log("Cheat success...");
             break;
         }
 
-        // Fix level
         password = await FixPassword(password, level, configWrapper, letterBanned);
-        console.log(password)
     } while (true);
 
     return password;
@@ -379,7 +379,7 @@ const IsAllFinished = (result: Record<number, boolean>, configWrapper: ConfigWra
     }
 
     for (let i = 1; i <= 20; i++) {
-        if (!result[i] && i !== 5 && i !== 18 && i !== 19) {
+        if (!result[i] && i !== 5 && i !== 18 && i !== 19 && i !== 14 && i !== 15) {
             console.log(`Level ${i} is not finished`);
             return i;
         }

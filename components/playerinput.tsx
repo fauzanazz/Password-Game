@@ -10,7 +10,11 @@ import './playerinput.css';
 import CheatGenerator, {ConfigWrapper} from "@/actions/Cheat";
 import LoadingScreen from "@/components/LoadingScreen";
 import ScorePassword from "@/components/ScorePassword";
+import {Difficulty} from "@/app/page";
 
+interface PlayerInputProps {
+    Difficulty?: Difficulty;
+}
 const PlayerInput = () => {
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const [password, setPassword] = useState("");
@@ -62,6 +66,7 @@ const PlayerInput = () => {
     const [bannedWord, setBannedWord] = useState("");
     const [isLoadingCheat, setIsLoadingCheat] = useState(false);
     const [isCheatUsed, setIsCheatUsed] = useState(false);
+    const [Score, SetScore] = useState(0);
     useEffect(() => {
         // Random chance to set the fire level on again
         if (level >= 11 && !isCheatUsed) {
@@ -271,7 +276,8 @@ const PlayerInput = () => {
             const password = await CheatGenerator(input, config, bannedWord);
             if (password === "") return;
 
-            const pass = password.substring(0, password.length - 2);
+            const passLength = Array.from(password).length;
+            const pass = passLength == 99 ? password.substring(0, 97) : password
 
             setPassword(pass);
             inputRef.current!.value = pass;
@@ -329,6 +335,10 @@ const PlayerInput = () => {
         await processLevel(level, password, isCheatUsed);
     }
 
+    const onScoreChange = (value: number) => {
+        SetScore(value);
+    }
+
     return (
         <div className="flex flex-col w-full p-8 items-center gap-y-5">
             <LoadingScreen isVisible={isLoadingCheat}/>
@@ -355,11 +365,11 @@ const PlayerInput = () => {
                     <label className="text-lg absolute right-[-32px]"> {Array.from(password).length === 0 ? "" : Array.from(password).length} </label>
                 </div>
                 <FinishScreen win="You win" lose="You lose" state={isWinning} isVisible={isFinished}
-                              onClose={() => setIsFinished(false)}/>
+                              onClose={() => setIsFinished(false)} score={Score}/>
 
             </div>
             <div className="flex flex-col text-center items-center justify-center w-full gap-y-5">
-                <ScorePassword password={password}/>
+                <ScorePassword password={password} onValueChange={onScoreChange}/>
             </div>
             <div className={`flex flex-col text-center items-center justify-center w-full gap-y-5 ${level >= 15 ? "" : "hidden"}`}>
                 <label className="text-lg">Enter the banned word</label>
