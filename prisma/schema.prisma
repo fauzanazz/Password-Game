@@ -1,0 +1,38 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       String  @id @default(cuid())
+  username String  @unique
+  Score    Score[]
+}
+
+model Score {
+  id       String @id @default(cuid())
+  score    Int
+  mode     String
+  username String
+  user     User   @relation(fields: [userId], references: [id])
+  userId   String
+}
+
+model Captcha {
+  id     String @id @default(cuid())
+  answer String
+  image  Bytes
+}
+
+model CountryFlag {
+  id      String @id @default(cuid())
+  image   Bytes
+  country String
+}
