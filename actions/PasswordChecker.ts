@@ -1,9 +1,11 @@
 import { getAnswerCaptcha, getAnswerCountryFlag } from "@/actions/database";
 import KMP from "@/Algorithm/StringMatching/KMP";
 import {FindDifferenceTarget} from "@/actions/Cheat";
+import {Difficulty} from "@/app/page";
 
 
 export interface SessionConfig {
+    Difficulty: Difficulty;
     passLength: number;
     sumDigits: number;
     countryID: string;
@@ -40,7 +42,7 @@ const Runner = async (password: string, level: number, currentLevel: number, con
         case 4:
             return level4(password);
         case 5:
-            return level5(password, config.sumDigits, isLoadingCheat);
+            return level5(password, config.sumDigits, isLoadingCheat, isCheatUsed);
         case 6:
             return level6(password);
         case 7:
@@ -109,7 +111,7 @@ const level4 = (password: string) => {
     return /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(password);
 }
 
-const level5 = async (password: string, sum: number, isLoadingCheat: boolean) => {
+const level5 = async (password: string, sum: number, isLoadingCheat: boolean, isCheatUsed: boolean) => {
     if (debuggingMode) return true;
     const ArrayPassword = Array.from(password);
     let PredictedSum = 0;
@@ -128,9 +130,8 @@ const level5 = async (password: string, sum: number, isLoadingCheat: boolean) =>
 
     PredictedSum += sumPassword;
 
-    console.log(`Sum Password: ${sumPassword} Sum: ${sum} Predicted Sum: ${PredictedSum}`);
-
-    return sumPassword === sum || sumPassword === PredictedSum;
+    if (isCheatUsed) return sumPassword === sum || sumPassword === PredictedSum;
+    return sumPassword === sum;
 }
 
 const level6 = (password: string) => {
@@ -207,8 +208,8 @@ const level10 = async (password: string) => {
     if (debuggingMode) return true;
 
     // Oh no! Your password is on fire 🔥. Quick, put it out!
-    const fireEmojiPattern = /🔥/;
-    return !fireEmojiPattern.test(password);
+    const passwordArray = Array.from(password);
+    return !passwordArray.includes("🔥");
 
 }
 
@@ -299,24 +300,28 @@ const level18 = async (password: string) => {
 
 const level19 = (password: string, isLoadingCheat: boolean) => {
     if (debuggingMode) return true;
+    const arrPass = Array.from(password);
 
     // The length of your password must be a prime number
-    const length = isLoadingCheat? Array.from(password).length + 2 : Array.from(password).length;
+    const length = Array.from(password).length;
+
     if (length <= 1) return false;
     for (let i = 2; i <= Math.sqrt(length); i++) {
         if (length % i === 0) return false;
     }
+
     return true;
 }
 
 const level20 = async (password: string, isCheatUsed: boolean) => {
-    if (debuggingMode || isCheatUsed) return true;
+    if (debuggingMode || isCheatUsed ) return true;
 
     // Your password must include the current time in 24-hour format
     const time = new Date().toLocaleTimeString('en-US', { hour12: false });
     const kmp = KMP(password, time);
     return kmp != -1;
 }
+
 
 
 export default PasswordChecker;

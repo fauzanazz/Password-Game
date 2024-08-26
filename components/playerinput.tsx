@@ -3,15 +3,22 @@ import React, {useEffect, useRef, useState} from "react";
 import {RulesData} from "@/components/Rules/RuleCard";
 import Rules from "@/components/Rules/Rules";
 import {PasswordChecker} from "@/actions/PasswordChecker";
-import {configGenerator} from "@/actions/SessionGenerator";
+import {configGenerator, getRandomEntryCaptcha} from "@/actions/SessionGenerator";
 import FinishScreen from "@/components/FinishScreen";
 import {generateSetRules} from "@/components/Rules/SetRules";
 import './playerinput.css';
 import CheatGenerator, {ConfigWrapper} from "@/actions/Cheat";
 import LoadingScreen from "@/components/LoadingScreen";
-import ScorePassword from "@/components/ScorePassword";
+import ScorePassword, {PasswordScorerEntropy} from "@/components/ScorePassword";
+import {Difficulty} from "@/app/page";
+import {addLeaderboard, addLeaderboardItem} from "@/actions/database";
 
-const PlayerInput = () => {
+export interface PlayerInputProps {
+    difficulty: Difficulty;
+    username: string;
+}
+
+const PlayerInput: React.FC<PlayerInputProps> = ({ difficulty, username }) => {
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const [password, setPassword] = useState("");
     const [level, setLevel] = useState(0);
@@ -21,6 +28,7 @@ const PlayerInput = () => {
     const [config, setConfig] = useState<ConfigWrapper>(
         {
             config: {
+                Difficulty: Difficulty.NONE,
                 passLength: 0,
                 sumDigits: 0,
                 countryID: "",
@@ -41,12 +49,13 @@ const PlayerInput = () => {
 
     useEffect(() => { // Config and rules generation
         const fetchData = async () => {
-            const data = await configGenerator();
+            const data = await configGenerator(difficulty);
             const generatedRules = await generateSetRules(data);
             const rulesData = generatedRules.map((rule, index) => ({
                 title: rule.title,
                 description: rule.description(),
                 image: rule.image,
+                isCaptcha: rule.isCaptcha,
                 index: index
             }));
             setRules(rulesData);
@@ -54,7 +63,22 @@ const PlayerInput = () => {
         };
 
         fetchData();
-    }, []);
+    }, [difficulty]);
+
+    useEffect(() => {
+        const reloadRules = async () => {
+            const generatedRules = await generateSetRules(config.config);
+            const rulesData = generatedRules.map((rule, index) => ({
+                title: rule.title,
+                description: rule.description(),
+                image: rule.image,
+                isCaptcha: rule.isCaptcha,
+                index: index
+            }));
+            setRules(rulesData);
+        };
+        reloadRules();
+    }, [config]);
 
     const [isFireLevel, setIsFireLevel] = useState(false);
     const [isEggLevel, setIsEggLevel] = useState(false);
@@ -212,7 +236,6 @@ const PlayerInput = () => {
             if (intervalChicken) clearInterval(intervalChicken);
         };
     }, [config, isCheatUsed, isChickenLevel]);
-
     const preProcessLevel = async (currentLevel: number, input: string, isCheatUsed: boolean) => {
         switch (currentLevel) {
             case 10:
@@ -260,6 +283,17 @@ const PlayerInput = () => {
             setIsFinished(true);
         }
     }
+
+    async function onFinish(password: string) {
+        const parsedUsername = username === "" ? "Anonymous" : username;
+        const leaderboardData: addLeaderboardItem = {
+            username: parsedUsername,
+            score: PasswordScorerEntropy(password) / 6,
+            mode: difficulty
+        };
+        await addLeaderboard(leaderboardData);
+    }
+
     const processLevel = async (currentLevel: number, input: string, isCheatUsed: boolean) => {
 
         SpecialEndings(currentLevel, input);
@@ -270,22 +304,19 @@ const PlayerInput = () => {
             setIsLoadingCheat(true);
             const password = await CheatGenerator(input, config, bannedWord);
             if (password === "") return;
-
-            const pass = password.substring(0, password.length - 2);
-
-            setPassword(pass);
-            inputRef.current!.value = pass;
+            setPassword(password);
+            inputRef.current!.value = password;
             setIsLoadingCheat(false);
             setIsCheatUsed(true);
 
             const isCheatUsedNow = true;
 
-            await processLevel(currentLevel, pass, isCheatUsedNow);
+            await processLevel(currentLevel, password, isCheatUsedNow);
             return;
         }
         setBooleanData(result);
 
-        for (let i = 1; i <= currentLevel; i++) { // If some level not passed yet, return
+        for (let i = 1; i <= currentLevel; i++) {
             if (!result[i]) {
                 return;
             }
@@ -293,6 +324,7 @@ const PlayerInput = () => {
 
         if (!result[currentLevel]) return;
         if (currentLevel === 20) {
+            await onFinish(password);
             setIsWinning(true);
             setIsFinished(true);
             return;
@@ -329,8 +361,32 @@ const PlayerInput = () => {
         await processLevel(level, password, isCheatUsed);
     }
 
+    async function reloadRules() {
+        const generatedRules = await generateSetRules(config.config);
+        const rulesData = generatedRules.map((rule, index) => ({
+            title: rule.title,
+            description: rule.description(),
+            image: rule.image,
+            isCaptcha: rule.isCaptcha,
+            index: index
+        }));
+        setRules(rulesData);
+    }
+
+    const onChaptchaReload = async () => {
+        let data = config;
+        const captcha = await getRandomEntryCaptcha();
+        data.config.CaptchaID = captcha.id;
+        setConfig(data);
+
+        await reloadRules();
+        await processLevel(level, password, isCheatUsed);
+    }
+
+
+
     return (
-        <div className="flex flex-col w-full p-8 items-center gap-y-5">
+        <div className="flex flex-col w-full p-8 items-center gap-y-5 mt-10">
             <LoadingScreen isVisible={isLoadingCheat}/>
             <div className="flex flex-col text-center items-center justify-center w-full gap-y-5">
                 <h1 className="text-4xl font-serif">✶ The Password Game</h1>
@@ -371,7 +427,7 @@ const PlayerInput = () => {
                 />
             </div>
             <div>
-                <Rules rules={rules} level={level} config={config.config} data={booleanData}/>
+                <Rules rules={rules} level={level} config={config.config} data={booleanData} onChaptchaReload={onChaptchaReload}/>
             </div>
         </div>
     );

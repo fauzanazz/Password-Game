@@ -6,9 +6,14 @@ import {getAnswerCaptcha, getAnswerCountryFlag} from "@/actions/database";
 // Cheat for 20 Level No Difficulty
 // 7/14/2024
 
+// Cheat for 20 Level with Difficulty
+// 8/25/2024
+
 export interface ConfigWrapper {
     config: SessionConfig;
 }
+
+let level5Answer;
 const CheatGenerator = async (password: string, configWrapper: ConfigWrapper, letterBanned: string) => {
     // Correctly remove "cheat" from password using regex replacement
     const regex = /cheat/gi;
@@ -19,19 +24,17 @@ const CheatGenerator = async (password: string, configWrapper: ConfigWrapper, le
         const result = await PasswordChecker(password, 20, config, letterBanned, true, true);
 
         if (result === null) {
-            console.log("Cheat failed...", password);
             break;
         }
 
         const level = IsAllFinished(result, configWrapper);
+
         if (level === -1) {
-            console.log("Cheat success...");
             break;
         }
 
         // Fix level
         password = await FixPassword(password, level, configWrapper, letterBanned);
-        console.log(password)
     } while (true);
 
     return password;
@@ -75,7 +78,7 @@ const FixPassword = async (password: string, level: number, ConW: ConfigWrapper,
         case 17:
             return FixLevel17(password, config.MinimumDigits);
         case 18:
-            return FixLevel18(password);
+            return FixLevel18(password, ConW);
         case 19:
             return FixLevel19(password);
         case 20:
@@ -110,7 +113,7 @@ const FixLevel4 = (password: string) => {
 }
 
 const FixLevel5 = async (password: string, config: ConfigWrapper) => {
-    const ArrayPassword = password.split("");
+    const ArrayPassword = Array.from(password)
     let TargetDigits = config.config.sumDigits;
     let sum = 0;
     ArrayPassword.forEach((char) => {
@@ -139,7 +142,6 @@ const FixLevel5 = async (password: string, config: ConfigWrapper) => {
         sum += BiggestNumber;
     }
 
-    console.log(`Sum : ${sum} Target : ${TargetDigits} Password : ${password} `);
     return password;
 }
 
@@ -155,9 +157,6 @@ export const FindDifferenceTarget = async (ArrayPassword: string[], TargetDigits
 
     return AddedFuturePrime + 2;
 }
-
-
-
 const FindClosestPrime = (num: number) => {
     let i = num;
     while (true) {
@@ -225,7 +224,6 @@ const FixLevel9 = (password: string, RomanNumeralMult: number) => {
         romanNumerals.forEach((roman) => {
             productRoman *= romanToNumber(roman);
         });
-        console.log(RomanNumeralMult, productRoman);
     } else {
         // Case 1 : no RomanNumeral found
         // Just add RomanNumeral
@@ -294,7 +292,6 @@ const FixLevel10 = (password: string) => {
 }
 
 const FixLevel11 = (password: string) => {
-    // NO need to be fixed
     return password
 }
 
@@ -345,15 +342,29 @@ const FixLevel17 = (password: string, MinimumDigits: number) => {
     return ArrayPassword.join("");
 }
 
-const FixLevel18 = (password: string) => {
-    const ArrayPassword = password.split("");
-    password += (ArrayPassword.length + 2);
+const FixLevel18 = (password: string, config: ConfigWrapper) => {
+    let ArrayPassword = Array.from(password);
+
+    // Check length password
+    const passlength = ArrayPassword.length;
+
+    let passlengthlength = FindClosestPrime(passlength);
+    password += passlengthlength;
+
+    ArrayPassword = Array.from(password)
+    let sum = 0;
+    ArrayPassword.forEach((char) => {
+        if (!isNaN(parseInt(char))) {
+            sum += parseInt(char);
+        }
+    });
+
+    config.config.sumDigits = sum;
     return password;
 }
 
 const FixLevel19 = (password: string) => {
-
-    while (!isPrime(Array.from(password).length + 2)){
+    while (!isPrime(Array.from(password).length)){
         password += '0';
     }
     return password;
@@ -371,37 +382,12 @@ const FixLevel20 = (password: string) => {
     const time = new Date().toLocaleTimeString('en-US', { hour12: false });
     return `${password} ${time} `;
 }
-const IsAllFinished = (result: Record<number, boolean>, configWrapper: ConfigWrapper) => {
-    // Check problematik level
-    if (!result[12]){
-        console.log("Level 12 is not finished");
-        return 12;
-    }
 
+const IsAllFinished = (result: Record<number, boolean>, configWrapper: ConfigWrapper) => {
     for (let i = 1; i <= 20; i++) {
-        if (!result[i] && i !== 5 && i !== 18 && i !== 19) {
-            console.log(`Level ${i} is not finished`);
+        if (!result[i]) {
             return i;
         }
-    }
-
-    if (!result[5]){
-        // Max possible if clock at the max 2 + 3 + 5 + 9 + 5 + 9 = 33
-        // Max possible captcha 13
-        // Max estimation password length = 99, kalo nyampe 3 digit trolling bro don't use cheat
-        configWrapper.config.sumDigits = 33 + 13 + 9 + 9;
-        console.log("Level 5 is not finished");
-        return 5;
-    }
-
-    if (!result[19]){
-        console.log("Level 19 is not finished");
-        return 19;
-    }
-
-    if (!result[18]){
-        console.log("Level 18 is not finished");
-        return 18;
     }
 
     return -1;

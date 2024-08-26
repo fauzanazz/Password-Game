@@ -17,7 +17,6 @@ export const FinishScreen: React.FC<FinishScreenProps> = ({ win, lose, state, is
             <div className="message">
                 {state ? <p>{win}</p> : <p>{lose}</p>}
             </div>
-            <button className="closeButton" onClick={onClose}>X</button>
         </div>
     );
 };

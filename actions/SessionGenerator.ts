@@ -2,21 +2,48 @@
 
 import {db} from "@/lib/db";
 import {SessionConfig} from "@/actions/PasswordChecker";
+import {Difficulty} from "@/app/page";
 
-export const configGenerator = async () => {
-    const passLength = Math.floor(Math.random() * 5) + 5;
-    const sumDigits = Math.floor(Math.random() * 50) + 30;
+export const configGenerator = async (difficulty: Difficulty) => {
+    let passLength = 0, sumDigits = 0, RomanNumeralMult = 0, WormsEaten = 0, WormsUpdateRate = 0, RandomBannedWord = 0, MinimumDigits = 0;
+
+    switch (difficulty) {
+        case "easy":
+            passLength = Math.floor(Math.random() * 3) + 3;
+            sumDigits = Math.floor(Math.random() * 5) + 10;
+            RomanNumeralMult = (Math.floor(Math.random() * 3) * 5) + 10;
+            WormsEaten = Math.floor(Math.random() * 5) + 1;
+            WormsUpdateRate = (Math.floor(Math.random() * 3) + 1) * 10;
+            RandomBannedWord = Math.floor(Math.random() * 2) + 1;
+            MinimumDigits = Math.floor(Math.random() * 5) + 3;
+            break;
+        case "medium":
+            passLength = Math.floor(Math.random() * 5) + 5;
+            sumDigits = Math.floor(Math.random() * 10) + 20;
+            RomanNumeralMult = (Math.floor(Math.random() * 5) * 5) + 20;
+            WormsEaten = Math.floor(Math.random() * 8) + 1;
+            WormsUpdateRate = (Math.floor(Math.random() * 5) + 1) * 15;
+            RandomBannedWord = Math.floor(Math.random() * 2) + 1;
+            MinimumDigits = Math.floor(Math.random() * 10) + 5;
+            break;
+        case "hard":
+            passLength = Math.floor(Math.random() * 7) + 7;
+            sumDigits = Math.floor(Math.random() * 15) + 30;
+            RomanNumeralMult = (Math.floor(Math.random() * 7) * 5) + 30;
+            WormsEaten = Math.floor(Math.random() * 10) + 2;
+            WormsUpdateRate = (Math.floor(Math.random() * 7) + 1) * 20;
+            RandomBannedWord = Math.floor(Math.random() * 3) + 1;
+            MinimumDigits = Math.floor(Math.random() * 15) + 7;
+            break;
+    }
+
     const country = await getRandomEntryFlag();
     const countryID = country.id;
-    const RomanNumeralMult = (Math.floor(Math.random() * 5) * 5) + 20;
     const Capcha = await getRandomEntryCaptcha();
     const CaptchaID = Capcha.id;
-    const WormsEaten = Math.floor(Math.random() * 8) + 1;
-    const WormsUpdateRate = (Math.floor(Math.random() * 5) + 1) * 15;
-    const RandomBannedWord = Math.floor(Math.random() * 2) + 1;
-    const MinimumDigits = Math.floor(Math.random() * 30) + 10;
 
     const config: SessionConfig = {
+        Difficulty: difficulty,
         passLength,
         sumDigits,
         countryID,
