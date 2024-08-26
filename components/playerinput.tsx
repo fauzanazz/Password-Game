@@ -152,6 +152,10 @@ const PlayerInput: React.FC<PlayerInputProps> = ({ difficulty, username }) => {
     }, [isFireLevel, level, isCheatUsed]);
 
     useEffect(() => {
+        processLevel(level, password, isCheatUsed)
+    }, [password]);
+
+    useEffect(() => {
         const handleInput = () => {
             const text = inputRef.current?.value || "";
 

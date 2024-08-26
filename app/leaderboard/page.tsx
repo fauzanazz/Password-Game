@@ -48,7 +48,7 @@ const Page = () => {
     }, []);
 
     return (
-        <div className="h-screen flex items-center justify-center">
+        <div className="flex w-screen justify-center mt-20">
             <div className="bg-background rounded-lg border p-6 w-full max-w-4xl">
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="text-2xl font-bold">Leaderboard</h2>
